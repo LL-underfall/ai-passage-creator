@@ -11,6 +11,7 @@ import com.yupi.template.manager.SseEmitterManager;
 import com.yupi.template.model.dto.article.ArticleCreateRequest;
 import com.yupi.template.model.dto.article.ArticleQueryRequest;
 import com.yupi.template.model.entity.User;
+import com.yupi.template.model.enums.ArticleStyleEnum;
 import com.yupi.template.model.vo.ArticleVO;
 import com.yupi.template.service.ArticleAsyncService;
 import com.yupi.template.service.ArticleService;
@@ -46,21 +47,32 @@ public class ArticleController {
      */
     @PostMapping("/create")
     @Operation(summary = "创建文章任务")
-    public BaseResponse<String> createArticle(@RequestBody ArticleCreateRequest request, HttpServletRequest httpServletRequest) {
+    public BaseResponse<String> create(@RequestBody ArticleCreateRequest request, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(request.getTopic() == null || request.getTopic().trim().isEmpty(),
                 ErrorCode.PARAMS_ERROR, "选题不能为空");
+        // 校验风格参数（允许为空）
+        ThrowUtils.throwIf(!ArticleStyleEnum.isValid(request.getStyle()),
+                ErrorCode.PARAMS_ERROR, "无效的文章风格");
 
-        User loginUser = userService.getLoginUser(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpRequest);
 
-        // 创建文章任务
-        String taskId = articleService.createArticleTask(request.getTopic(), loginUser);
+        // 创建任务（包含风格参数）
+        String taskId = articleService.createArticleTaskWithQuotaCheck(
+                request.getTopic(),
+                request.getStyle(),
+                loginUser);
 
-        // 异步执行文章生成
-        articleAsyncService.executeArticleGeneration(taskId, request.getTopic());
+        // 异步执行（传递风格和配图方式）
+        articleAsyncService.executeArticleGeneration(
+                taskId,
+                request.getTopic(),
+                request.getStyle(),
+                request.getEnabledImageMethods());
 
         return ResultUtils.success(taskId);
     }
+
     /**
      * SSE 进度推送
      */

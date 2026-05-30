@@ -9,9 +9,15 @@ import com.yupi.template.model.entity.Article;
 import com.yupi.template.model.entity.User;
 import com.yupi.template.model.enums.ArticleStatusEnum;
 import com.yupi.template.model.vo.ArticleVO;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 public interface ArticleService extends IService<Article> {
-    String createArticleTask(String topic, User loginUser);
+    @Transactional(rollbackFor = Exception.class)
+    String createArticleTaskWithQuotaCheck(String topic, String style, User loginUser);
+
+    String createArticleTask(String topic, String style, User loginUser);
 
     Article getByTaskId(String taskId);
 

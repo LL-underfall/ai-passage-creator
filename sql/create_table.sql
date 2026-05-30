@@ -32,6 +32,17 @@ INSERT INTO user (id, userAccount, userPassword, userName, userAvatar, userProfi
 (2, 'user', 'b0ae9cc0c38011f4e6e0ed7db21bbf8a', '普通用户', 'https://www.codefather.cn/logo.png', '我是一个普通用户', 'user'),
 (3, 'test', 'b0ae9cc0c38011f4e6e0ed7db21bbf8a', '测试账号', 'https://www.codefather.cn/logo.png', '这是一个测试账号', 'user');
 
+-- 用户配额升级脚本
+-- @author <a href="https://codefather.cn">编程导航学习圈</a>
+
+use ai_passage_creator;
+
+-- 添加 quota 字段
+ALTER TABLE user ADD COLUMN quota int default 5 not null comment '剩余配额' AFTER userRole;
+
+-- 为已有用户设置默认配额
+UPDATE user SET quota = 5 WHERE quota IS NULL;
+
 -- 文章表
 create table if not exists article
 (
@@ -58,6 +69,14 @@ create table if not exists article
     INDEX idx_createTime (createTime),
     INDEX idx_userId_status (userId, status)
 ) comment '文章表' collate = utf8mb4_unicode_ci;
+
+# 添加文章风格字段
+# @author <a href="https://codefather.cn">编程导航学习圈</a>
+
+-- 为 article 表添加 style 字段（文章风格）
+ALTER TABLE article
+    ADD COLUMN style VARCHAR(20) NULL COMMENT '文章风格：tech/emotional/educational/humorous' AFTER topic;
+
 
 -- 智能体执行日志表
 create table if not exists agent_log

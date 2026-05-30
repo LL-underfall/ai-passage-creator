@@ -80,6 +80,12 @@ public class Article implements Serializable {
     private String images;
 
     /**
+     * 文章风格：tech/emotional/educational/humorous
+     */
+    private String style;
+
+
+    /**
      * 状态：PENDING/PROCESSING/COMPLETED/FAILED
      */
     private String status;

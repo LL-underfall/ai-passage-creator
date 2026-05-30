@@ -17,5 +17,11 @@ public class ArticleCreateRequest implements Serializable {
      */
     private String topic;
 
+    /**
+     * 文章风格（可选）
+     */
+    private String style;
+
+
     private static final long serialVersionUID = 1L;
 }

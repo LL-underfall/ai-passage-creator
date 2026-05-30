@@ -73,6 +73,12 @@ public class User implements Serializable {
     private String userRole;
 
     /**
+     * 剩余配额
+     */
+    @Column("quota")
+    private Integer quota;
+
+    /**
      * 编辑时间
      */
     @Column("editTime")

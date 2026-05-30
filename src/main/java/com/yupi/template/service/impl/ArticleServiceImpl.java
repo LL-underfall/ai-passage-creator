@@ -2,7 +2,6 @@ package com.yupi.template.service.impl;
 
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -16,9 +15,12 @@ import com.yupi.template.model.entity.User;
 import com.yupi.template.model.enums.ArticleStatusEnum;
 import com.yupi.template.model.vo.ArticleVO;
 import com.yupi.template.service.ArticleService;
+import com.yupi.template.service.QuotaService;
 import com.yupi.template.utils.GsonUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,8 +33,21 @@ import static com.yupi.template.constant.UserConstant.ADMIN_ROLE;
 @Slf4j
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> implements ArticleService {
 
+    @Resource
+    private QuotaService quotaService;
+
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public String createArticleTask(String topic, User loginUser) {
+    public String createArticleTaskWithQuotaCheck(String topic, String style, User loginUser) {
+        // 在同一事务中：先扣配额，再创建任务
+        // 如果任务创建失败，配额会自动回滚
+        quotaService.checkAndConsumeQuota(loginUser);
+        return createArticleTask(topic, style, loginUser);
+    }
+
+
+    @Override
+    public String createArticleTask(String topic, String style, User loginUser) {
         // 生成任务ID
         String taskId = IdUtil.simpleUUID();
 
@@ -41,12 +56,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         article.setTaskId(taskId);
         article.setUserId(loginUser.getId());
         article.setTopic(topic);
+        article.setStyle(style);
         article.setStatus(ArticleStatusEnum.PENDING.getValue());
         article.setCreateTime(LocalDateTime.now());
 
         this.save(article);
 
-        log.info("文章任务已创建, taskId={}, userId={}", taskId, loginUser.getId());
+        log.info("文章任务已创建, taskId={}, userId={}, style={}", taskId, loginUser.getId(), style);
         return taskId;
     }
 
